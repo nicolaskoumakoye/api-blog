@@ -3,8 +3,12 @@ const express = require('express');
 
 // 2. On crée notre application
 const app = express();
+
 // On importe notre connexion à la base
 const pool = require('./db');
+
+// Le port sur lequel le serveur va écouter
+const PORT = 3000;
 
 // Test de connexion à la base de données
 pool.query('SELECT NOW()', (err, res) => {
@@ -15,15 +19,19 @@ pool.query('SELECT NOW()', (err, res) => {
     }
 });
 
-// 3. On définit le "port" sur lequel le serveur va écouter
-const PORT = 3000;
+// Permet à Express de lire le JSON envoyé dans les requêtes
+app.use(express.json());
 
-// 4. On crée une première route : quand quelqu'un visite "/", on répond
+// On branche notre routeur d'authentification
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+
+// Route de test de base
 app.get('/', (req, res) => {
-  res.send('Bonjour ! Mon API de blog fonctionne 🚀');
+    res.send('Mon API de blog fonctionne 🚀');
 });
 
-// 5. On démarre le serveur
+// Démarrage du serveur
 app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+    console.log(`Serveur démarré sur http://localhost:${PORT}`);
 });
