@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const pool = require('../db');
+const jwt = require('jsonwebtoken');
 
 // Route d'inscription : POST /register
 router.post('/register', async (req, res) => {
@@ -33,6 +34,54 @@ router.post('/register', async (req, res) => {
         // Si l'email existe déjà, ou autre erreur
         console.error(error);
         res.status(500).json({ error: 'Erreur lors de la création du compte' });
+    }
+});
+
+
+// Route de connexion : POST /login
+router.post('/login', async (req, res) => {
+    try {
+        // 1. On récupère email et mot de passe
+        const { email, password } = req.body;
+
+        // 2. On vérifie que les deux sont fournis
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email et mot de passe obligatoires' });
+        }
+
+        // 3. On cherche l'utilisateur par son email
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+        // 4. Si aucun utilisateur trouvé
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+        }
+
+        const user = result.rows[0];
+
+        // 5. On compare le mot de passe fourni avec le hash stocké
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
+            return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+        }
+
+        // 6. Mot de passe correct : on génère un token JWT
+        const token = jwt.sign(
+            { userId: user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        // 7. On renvoie le token
+        res.json({
+            message: 'Connexion réussie',
+            token: token
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la connexion' });
     }
 });
 
