@@ -26,6 +26,10 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 
+// On branche notre routeur d'articles
+const articleRoutes = require('./routes/articles');
+app.use('/api/articles', articleRoutes);
+
 // Route de test de base
 app.get('/', (req, res) => {
     res.send('Mon API de blog fonctionne 🚀');

@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 router.post('/register', async (req, res) => {
     try {
         // 1. On récupère les données envoyées par l'utilisateur
-        const { name, email, password } = req.body;
+        const { name, email, password } = req.body || {};
 
         // 2. On vérifie que tout est bien fourni
         if (!name || !email || !password) {
@@ -42,7 +42,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         // 1. On récupère email et mot de passe
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
         // 2. On vérifie que les deux sont fournis
         if (!email || !password) {
