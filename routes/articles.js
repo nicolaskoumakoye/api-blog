@@ -65,4 +65,72 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 });
 
+// PUT /articles/:id : modifier un article (protégé + seul l'auteur)
+router.put('/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, content } = req.body || {};
+
+        // 1. On vérifie que les données sont fournies
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Titre et contenu obligatoires' });
+        }
+
+        // 2. On récupère l'article concerné
+        const existing = await pool.query('SELECT * FROM articles WHERE id = $1', [id]);
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({ error: 'Article non trouvé' });
+        }
+
+        // 3. On vérifie que l'utilisateur est bien l'auteur (AUTORISATION)
+        if (existing.rows[0].author_id !== req.userId) {
+            return res.status(403).json({ error: 'Vous n\'êtes pas l\'auteur de cet article' });
+        }
+
+        // 4. On modifie l'article
+        const result = await pool.query(
+            'UPDATE articles SET title = $1, content = $2 WHERE id = $3 RETURNING *',
+            [title, content, id]
+        );
+
+        res.json({
+            message: 'Article modifié avec succès',
+            article: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la modification' });
+    }
+});
+
+// DELETE /articles/:id : supprimer un article (protégé + seul l'auteur)
+router.delete('/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. On récupère l'article concerné
+        const existing = await pool.query('SELECT * FROM articles WHERE id = $1', [id]);
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({ error: 'Article non trouvé' });
+        }
+
+        // 2. On vérifie que l'utilisateur est bien l'auteur (AUTORISATION)
+        if (existing.rows[0].author_id !== req.userId) {
+            return res.status(403).json({ error: 'Vous n\'êtes pas l\'auteur de cet article' });
+        }
+
+        // 3. On supprime l'article
+        await pool.query('DELETE FROM articles WHERE id = $1', [id]);
+        
+        res.json({ message: 'Article supprimé avec succès' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Erreur lors de la suppression' });
+    }
+});
+
 module.exports = router;
