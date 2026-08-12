@@ -30,6 +30,9 @@ app.use('/api/auth', authRoutes);
 const articleRoutes = require('./routes/articles');
 app.use('/api/articles', articleRoutes);
 
+const commentRoutes = require('./routes/comments');
+app.use('/api', commentRoutes);
+
 // Route de test de base
 app.get('/', (req, res) => {
     res.send('Mon API de blog fonctionne 🚀');
